@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import csv
 import time
+import string, re
 
 capab = DesiredCapabilities.CHROME
 """This will make Selenium WebDriver to wait until the initial HTML document has been completely loaded and parsed, 
@@ -22,6 +23,7 @@ chrome_options = Options()
 class Scrapper:
     def __init__(self):
         self.url = "https://www.nasdaq.com/market-activity/quotes/historical"
+
 
     @staticmethod
     def stock_list():
@@ -70,7 +72,8 @@ class Scrapper:
                 try:
                     driver.find_element_by_id("_evidon-decline-button").click()
                 except:
-                    continue
+                    #when doing multiple stocks cookie decline does not appear the second time, hence putting a try catch
+                    pass
 
                 # The below is the Historical Quotes Links full Xpath
                 driver.find_element_by_xpath(
@@ -91,65 +94,61 @@ class Scrapper:
                         try:
                             driver.find_element_by_class_name("pagination__next").click()
                             pagecount += 1
+                        #if stock has only one page of data exception occurs in above
                         except:
                             break
 
                     # Click on 1 Year Tab again to loop for data this time, we have created a speerate loop since for recent ipo stocks, which are only in one page , it is easier to handle with seperate loops
                     driver.find_element_by_xpath("/html/body/div[2]/div/main/div[2]/div[4]/div[3]/div/div[1]/div/div[1]/div[3]/div/div/div/button[4]").click()
+                    #the sleep below is to make sure that we are not reading from the last page from the above loop which we are using to detremine the number of times to loop
+                    time.sleep(5)
                     #if page count is greater than 1 we iterate by cliking pagination_next
                     if pagecount>1:
                         for i in range(pagecount):
+                            #the Tr table element that has all the rows
                             trs = driver.find_elements_by_xpath('/html/body/div[2]/div/main/div[2]/div[4]/div[3]/div/div[1]/div/div[1]/div[4]/div[2]/div/table/tbody[2]')
-                            data = []
+                            #looping through the rows
                             for tr in trs:
                                 data = str(tr.text).split()
-                                print(data)
+                                # data above is stored as one chunck, we need to split data to 6 columns and add row by row
+                                length = int(data.__len__() / 6)
+                                j = 0
+                                for i in range(length):
+                                    data_row=[]
+                                    data_row.append(data[0 + i + j])
+                                    data_row.append(data[1 + i + j])
+                                    data_row.append(data[2 + i + j])
+                                    data_row.append(data[3 + i + j])
+                                    data_row.append(data[4+ i + j])
+                                    data_row.append(data[5 + i + j])
+                                    writer.writerow(data_row)
+                                    #the below is to fetch the 7th element and put it in the next row
+                                    j += 5
                             driver.find_element_by_class_name("pagination__next").click()
                            #sleep is added below to avoid reading the same page again
                             time.sleep(2)
+                        csv_file.close()
                         print("No of scraped pages for",stock,"are",pagecount)
                     # if page count is less than 1 we read that page once
                     else:
                         trs = driver.find_elements_by_xpath('/html/body/div[2]/div/main/div[2]/div[4]/div[3]/div/div[1]/div/div[1]/div[4]/div[2]/div/table/tbody[2]')
-                        data=[]
                         for tr in trs:
                             data = str(tr.text).split()
-                            print(data)
+                            length=int(data.__len__()/6)
+                            j=0
+                            for i in range(length):
+                                data_row = []
+                                data_row.append(data[0 + i + j])
+                                data_row.append(data[1 + i + j])
+                                data_row.append(data[2 + i + j])
+                                data_row.append(data[3 + i + j])
+                                data_row.append(data[4 + i + j])
+                                data_row.append(data[5 + i + j])
+                                writer.writerow(data_row)
+                                j+=5
+
+                        csv_file.close()
                         print("No of scraped pages for", stock, "are", pagecount)
-
-
-
-
-
-
-
-
-
-
-                    # #reclicking on 1 year tab again, for some reason using one loop is making the program read data multiple times in the middle pages
-                    # driver.find_element_by_xpath("/html/body/div[2]/div/main/div[2]/div[4]/div[3]/div/div[1]/div/div[1]/div[3]/div/div/div/button[4]").click()
-                    # for i in range(buttoncount):
-                    #     time.sleep(1)
-                    # # Find Elements under data rows,  i.e., with historical-data__row, ignore the column names tbody tag, we should find data under tr tag
-                    #     trs = driver.find_elements_by_xpath('/html/body/div[2]/div/main/div[2]/div[4]/div[3]/div/div[1]/div/div[1]/div[4]/div[2]/div/table/tbody[2]')
-                    #     data=[]
-                    #     for tr in trs:
-                    #         data=str(tr.text).split()
-                    #         print (data)
-                    #     time.sleep(1.5)
-                    #     driver.find_element_by_class_name("pagination__next").click()
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
