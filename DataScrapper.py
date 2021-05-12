@@ -24,7 +24,6 @@ class Scrapper:
     def __init__(self):
         self.url = "https://www.nasdaq.com/market-activity/quotes/historical"
 
-
     @staticmethod
     def stock_list():
         no_of_stocks = int(input("Enter no of stocks:"))
@@ -46,7 +45,6 @@ class Scrapper:
         stocks = self.stock_list()
         driver = Chrome("C:\\Users\\gopib\\Downloads\\chromedriver.exe", desired_capabilities=capab,
                         options=chrome_options)
-
 
         for stock in stocks:
             driver.get(self.url)
@@ -87,27 +85,27 @@ class Scrapper:
                 with open(str(stock) + '.csv', 'w') as csv_file:
                     writer = csv.writer(csv_file)
                     writer.writerow(file_columns)
-                    #Determing the number of times to loop by counting the number of buttons/pages in pagination
+                    # Determining the number of times to loop by counting the number of buttons/pages in pagination
                     pagecount=1
                     while driver.find_element_by_class_name("pagination__next").is_enabled():
                         time.sleep(1)
                         try:
                             driver.find_element_by_class_name("pagination__next").click()
                             pagecount += 1
-                        #if stock has only one page of data exception occurs in above
+                        # if stock has only one page of data exception occurs in above
                         except:
                             break
 
                     # Click on 1 Year Tab again to loop for data this time, we have created a speerate loop since for recent ipo stocks, which are only in one page , it is easier to handle with seperate loops
                     driver.find_element_by_xpath("/html/body/div[2]/div/main/div[2]/div[4]/div[3]/div/div[1]/div/div[1]/div[3]/div/div/div/button[4]").click()
-                    #the sleep below is to make sure that we are not reading from the last page from the above loop which we are using to detremine the number of times to loop
+                    # the sleep below is to make sure that we are not reading from the last page from the above loop which we are using to detremine the number of times to loop
                     time.sleep(5)
-                    #if page count is greater than 1 we iterate by cliking pagination_next
+                    # if page count is greater than 1 we iterate by cliking pagination_next
                     if pagecount>1:
                         for i in range(pagecount):
-                            #the Tr table element that has all the rows
+                            # the Tr table element that has all the rows
                             trs = driver.find_elements_by_xpath('/html/body/div[2]/div/main/div[2]/div[4]/div[3]/div/div[1]/div/div[1]/div[4]/div[2]/div/table/tbody[2]')
-                            #looping through the rows
+                            # looping through the rows
                             for tr in trs:
                                 data = str(tr.text).split()
                                 # data above is stored as one chunck, we need to split data to 6 columns and add row by row
@@ -122,10 +120,10 @@ class Scrapper:
                                     data_row.append(data[4+ i + j])
                                     data_row.append(data[5 + i + j])
                                     writer.writerow(data_row)
-                                    #the below is to fetch the 7th element and put it in the next row
+                                    # the below is to fetch the 7th element and put it in the next row
                                     j += 5
                             driver.find_element_by_class_name("pagination__next").click()
-                           #sleep is added below to avoid reading the same page again
+                           # sleep is added below to avoid reading the same page again
                             time.sleep(2)
                         csv_file.close()
                         print("No of scraped pages for",stock,"are",pagecount)
@@ -145,7 +143,7 @@ class Scrapper:
                                 data_row.append(data[4 + i + j])
                                 data_row.append(data[5 + i + j])
                                 writer.writerow(data_row)
-                                j+=5
+                                j += 5
 
                         csv_file.close()
                         print("No of scraped pages for", stock, "are", pagecount)
