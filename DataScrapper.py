@@ -9,6 +9,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import csv
 import time
 import string, re
+import datetime
 
 capab = DesiredCapabilities.CHROME
 """This will make Selenium WebDriver to wait until the initial HTML document has been completely loaded and parsed, 
@@ -48,6 +49,7 @@ class Scrapper:
 
         for stock in stocks:
             driver.get(self.url)
+            time.sleep(3)
             driver.maximize_window()
             # The below statement is for stopping the page load
             driver.execute_script("window.stop()")
@@ -76,9 +78,15 @@ class Scrapper:
                 # The below is the Historical Quotes Links full Xpath
                 driver.find_element_by_xpath(
                     "/html/body/div[2]/div/main/div[2]/div[4]/div/section/div/div[3]/ul/li[2]/a/span").click()
+
+                # we can also use wait until clickable , i chose to use sleep
                 time.sleep(5)
+
                 # Click on 1 Year Tab
                 driver.find_element_by_xpath("/html/body/div[2]/div/main/div[2]/div[4]/div[3]/div/div[1]/div/div[1]/div[3]/div/div/div/button[4]").click()
+                # element = WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.XPATH, "/html/body/div[2]/div/main/div[2]/div[4]/div[3]/div/div[1]/div/div[1]/div[3]/div/div/div/button[4]")))
+                # element.click()
+
 
                 # Creating the file to save data
                 file_columns = ["Date", "Close/Last", "Volume", "Open", "High", "Low"]
@@ -95,12 +103,12 @@ class Scrapper:
                         # if stock has only one page of data exception occurs in above
                         except:
                             break
-
-                    # Click on 1 Year Tab again to loop for data this time, we have created a speerate loop since for recent ipo stocks, which are only in one page , it is easier to handle with seperate loops
+                    time.sleep(3)
+                    # Click on 1 Year Tab again to loop for data this time, we have created a speerate loop since for recent ipo stocks, which are only in one page , it is easier to handle with seperate loops,also there are some data duplication if we are using one loop
                     driver.find_element_by_xpath("/html/body/div[2]/div/main/div[2]/div[4]/div[3]/div/div[1]/div/div[1]/div[3]/div/div/div/button[4]").click()
                     # the sleep below is to make sure that we are not reading from the last page from the above loop which we are using to detremine the number of times to loop
                     time.sleep(5)
-                    # if page count is greater than 1 we iterate by cliking pagination_next
+                    # if page count is greater than 1 we iterate by clicking pagination_next
                     if pagecount>1:
                         for i in range(pagecount):
                             # the Tr table element that has all the rows
@@ -113,15 +121,16 @@ class Scrapper:
                                 j = 0
                                 for i in range(length):
                                     data_row=[]
-                                    data_row.append(data[0 + i + j])
-                                    data_row.append(data[1 + i + j])
-                                    data_row.append(data[2 + i + j])
-                                    data_row.append(data[3 + i + j])
-                                    data_row.append(data[4+ i + j])
-                                    data_row.append(data[5 + i + j])
+                                    data_row.append(data[0 + i + j].replace('/','-'))
+                                    data_row.append(data[1 + i + j].replace('$', ''))
+                                    data_row.append(data[2 + i + j].replace(',', ''))
+                                    data_row.append(data[3 + i + j].replace('$', ''))
+                                    data_row.append(data[4 + i + j].replace('$', ''))
+                                    data_row.append(data[5 + i + j].replace('$', ''))
                                     writer.writerow(data_row)
                                     # the below is to fetch the 7th element and put it in the next row
                                     j += 5
+                            time.sleep(2)
                             driver.find_element_by_class_name("pagination__next").click()
                            # sleep is added below to avoid reading the same page again
                             time.sleep(2)
@@ -136,12 +145,12 @@ class Scrapper:
                             j=0
                             for i in range(length):
                                 data_row = []
-                                data_row.append(data[0 + i + j])
-                                data_row.append(data[1 + i + j])
-                                data_row.append(data[2 + i + j])
-                                data_row.append(data[3 + i + j])
-                                data_row.append(data[4 + i + j])
-                                data_row.append(data[5 + i + j])
+                                data_row.append(data[0 + i + j].replace('/', '-'))
+                                data_row.append(data[1 + i + j].replace('$', ''))
+                                data_row.append(data[2 + i + j].replace(',', ''))
+                                data_row.append(data[3 + i + j].replace('$', ''))
+                                data_row.append(data[4 + i + j].replace('$', ''))
+                                data_row.append(data[5 + i + j].replace('$', ''))
                                 writer.writerow(data_row)
                                 j += 5
 
