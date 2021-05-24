@@ -158,6 +158,4 @@ class Scrapper:
                         print("No of scraped pages for", stock, "are", pagecount)
 
 
-if __name__ == "__main__":
-    obj = Scrapper()
-    obj.scrape()
+

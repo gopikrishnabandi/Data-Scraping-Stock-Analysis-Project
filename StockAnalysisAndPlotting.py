@@ -5,6 +5,7 @@ import glob
 import matplotlib.pyplot as plt
 import seaborn as sns
 import time
+from scipy.stats import norm
 
 
 class StockAnalysis:
@@ -226,7 +227,7 @@ class StockAnalysis:
             # Each number signifies that the total loss for a single day will not exceed this value
             investment = 100000
             loss = (abs(df_dict[stock_name]['avg_daily_return'].quantile(0.1))) * investment
-            print(stock_name,"max loss can be ",loss)
+            print(stock_name,"max loss can be ",loss,"for an investment of ",investment, " in a day with an accuracy of 90%")
 
 
         plt.title('Avg Daily Returns vs Risk of Stocks')
@@ -235,18 +236,65 @@ class StockAnalysis:
 
     def future_stock_behavior(self):
         csv_files=glob.glob("*.csv")
+        df_dict = {}
+        i = 1
+        for file in csv_files:
+            stock_name = file.replace('.csv', '').upper()
+            df_dict[stock_name] = pd.read_csv(file)
+            df_dict[stock_name]['Date'] = df_dict[stock_name]['Date'].astype('datetime64[ns]')
+            df_dict[stock_name] = df_dict[stock_name].rename(columns={"Close/Last": "Close"})
+            df_dict[stock_name]['Close'] = df_dict[stock_name]['Close'].astype('float')
+            df_dict[stock_name] = df_dict[stock_name].drop(columns={'Volume', 'Open', 'High', 'Low'})
+            df_dict[stock_name] = df_dict[stock_name].set_index('Date')
+            df_dict[stock_name]['daily_return'] = df_dict[stock_name]['Close'].pct_change()
+            if i == 1:
+                plt.figure(figsize=(20, 10))
+                i += 1
+            else:
+                pass
+            log_returns = np.log(1 +  df_dict[stock_name]['daily_return'])  # Calculating log returns from daily returns
+
+            avg = log_returns.mean()  # Calculating average of log returns
+            var = log_returns.var()  # Calculating variance
+            drift = avg - (var / 2.0)  # Calculating drift
+            drift = np.array(drift)  # Convert to array
+
+            pred_price_overDays = 60  # Number of days
+            pred_count = 10  # Range of prediction
+
+            std = log_returns.std()  # Calculating STD
+            std = np.array(std)  # Convert to array
+
+            x = np.random.rand(pred_price_overDays, pred_count)  # get random multidimensional array
+
+            Rv = std * norm.ppf(x)  # Calculating Rv
+
+            # print("The required Rv array is:\n", Rv)
+            e_value = np.exp(drift + Rv)  # Calculating the E value
+
+            current_price = df_dict[stock_name]['Close'].iloc[-1]  # Selecting last price of the year
+
+            new_prices = np.zeros_like(e_value)  # create array to store the results
+
+            new_prices[0] = current_price
+
+            # print(new_prices)
+
+            for i in range(1, pred_price_overDays):  # Loop over all the days to find their prices
+                new_prices[i] = new_prices[i - 1] * e_value[i]  # Calculating the future price with formula
+
+            # print("The Minimum Predicted Price:", new_prices[pred_price_overDays - 1].min())  # Get minimum price
+            # print("The Maximum Predicted Price:", new_prices[pred_price_overDays - 1].max())  # Get maximum price
+
+            plt.figure(figsize=(20,10))
+            plt.xlabel('Days',fontsize=15)  # Assign name to x-axis
+            plt.ylabel('Price',fontsize=15)  # Assign name to y-axis
+            plt.title('Monte Carlo Analysis for '+ stock_name)  # Assign name to the plot
+            plt.plot(new_prices)  # plot the figure
+            plt.savefig(stock_name+" Future Prediction")
+            plt.legend([stock_name])
+
+            # print("\nThe price array:\n", new_prices)
 
 
 
-
-
-
-if __name__ == "__main__":
-    obj=StockAnalysis()
-    obj.closing_prices()
-    obj.close_vs_moving_average()
-    obj.daily_returns_combined()
-    obj.daily_returns_individual()
-    obj.correlation_close()
-    obj.correlation_daily_returns()
-    obj.risk_estimation()
